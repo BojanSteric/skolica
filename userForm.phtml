@@ -26,8 +26,11 @@
                     <div class="form-group">
                         <input value="<?php if(isset($user->username)): echo $user->username; endif;?>" type="text" name="username" class="form-control" placeholder="Username">
                     </div>
-
-                   <input type="email" value="<?php if(isset($user->email)): echo $user->email; endif;?>" name="email" class="form-control" aria-describedby="emailHelp" placeholder="Enter email">
+					<?php if (isset($user->email)): ?>
+						<input type="email"readonly value="<?php echo $user->email; ?>" name="email" class="form-control" aria-describedby="emailHelp">
+					<?php else: ?>
+						<input type="email" name="email" class="form-control" aria-describedby="emailHelp" placeholder="Enter email">
+					<?php endif; ?>
                 </div>
                 <div class="form-group">
                     <input type="password" name="password" class="form-control" placeholder="Password">

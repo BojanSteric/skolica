@@ -12,8 +12,9 @@
         <link href="css/style.css" rel="stylesheet">
     </head>
     <body>
+	
         <div class="container resizedForm">
-            <form action="index.php?route=<?php if (isset($article->title)): ?>articleUpdate<?php else: ?>articleCreate<?php endif; ?> " method="post">
+            <form action="index.php?route=<?php if (isset($article->title)): ?>articleUpdate&articleId=<?=$article->articleId; ?>&title<?=$article->title?><?php else: ?>articleCreate<?php endif; ?> " method="post">
                 <div class="form-group text-center">
                     <h1><?php if (isset($article->title)) :?>Update Article<?php else: ?>Create Article<?php endif; ?></h1>
                     <label for="title">Title</label>
@@ -38,17 +39,22 @@
                     <label for="image">Upload image</label>
                     <input type="file" name="image" class="form-control">
                 </div>
+				
                 <div class="form-group text-center">
                     <label for="user">Author of article</label>
-                    <input type="text" name="user" class="form-control" placeholder="Enter username here" value="<?php if(isset($article->user)): echo $article->user; endif;?>">
+					<select name="user" class="form-control">
+						<?php foreach($users as $user): ?>
+                                <option <?php if (isset($article->title) && $article->user === $user->username): echo 'selected="selected"'; endif?>> <?=$user->username ?></option>
+                        <?php endforeach; ?>
+					</select>
                 </div>
+				
                 <div class="form-group text-center">
                     <input type="submit" name="submit" value="<?php if (isset($article->title)): ?>Update Article<?php else: ?>Submit Article<?php endif; ?>">
                 </div>
 
             </form>
         </div>
-
 
 
 

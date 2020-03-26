@@ -14,12 +14,14 @@
             <th>Title</th>
             <th>Description</th>
             <th>Username</th>
+            <th>Remove</th>
         </tr>
         <?php foreach($articles as $article): ?>
             <tr>
-                <td><a href="index.php?route=articleUpdateForm&title=<?=$article -> title?>"><?=$article -> title ?></a></td>
+                <td><a href="index.php?route=articleUpdateForm&articleId=<?=$article -> articleId?>&title=<?=$article -> title?>"><?=$article -> title ?></a></td>
                 <td><?=$article -> description ?></td>
                 <td><?=$article -> user ?></td>
+                <td><a href="index.php?route=articleDelete&articleId=<?=$article -> articleId?>"> Delete </a></td>
             </tr>
         <?php endforeach; ?>
 

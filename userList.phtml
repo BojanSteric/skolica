@@ -16,6 +16,7 @@
             <th>First name</th>
             <th>last name</th>
             <th>Username</th>
+            <th>Deleting</th>
             <th>Image</th>
         </tr>
         <?php foreach($users as $user): ?>
@@ -24,6 +25,7 @@
                 <td><?=$user -> firstName ?></td>
                 <td><?=$user -> lastName ?></td>
                 <td><?=$user -> username ?></td>
+                <td><a href="index.php?route=userDelete&email=<?=$user->email?>"> Delete  </a> </td>
                 <td><img src="<?=$user -> image ?>" alt=""></td>
             </tr>
         <?php endforeach; ?>

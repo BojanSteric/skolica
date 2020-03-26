@@ -1,4 +1,7 @@
 <?php
+
+#region ValidateForm Functions
+
 function validateRegisterForm($params)
 {
     if (!is_array($params)) {
@@ -47,6 +50,71 @@ function validateUserForm(array $params)
     }
 }
 
+function validateArticleForm()
+{
+    if (isset($_POST['body']) && strlen($_POST['body']) < 1 || isset($_POST['category']) && strlen($_POST['category']) < 1 || isset($_POST['user']) && strlen($_POST['user']) < 1) {
+        return false;
+    }
+    return true;
+
+}
+
+function validateLoginForm(array $params)
+{
+    if (isset($params['email']) and isset($params['password'])) {
+        if ((strlen($params['email']) > 6 and strlen($params['email'] <= 20) and strstr($params['email'], '@', true)) and
+            (strlen($params['password']) > 6 and strlen($params['password']) <= 14)
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+#endregion
+
+#region LOGIN
+
+function login($email, $password)
+{
+    $user = getUserByEmail($email);
+    if (!$user) {
+        return false;
+    }
+    if ($user->password === createPasswordHash($password)) {
+        $_SESSION['isLoggedIn'] = true;
+        return true;
+    }
+    return false;
+}
+
+function isLoggedIn()
+{
+    if (isset($_SESSION['isLoggedIn']) && $_SESSION['isLoggedIn'] === true) {
+        return true;
+    }
+
+    return false;
+}
+
+function createPasswordHash($password)
+{
+    return md5($password);
+}
+
+function logOut()
+{
+    unset($_SESSION);
+    session_destroy();
+}
+
+#endregion
+
+#region User Functions
+
 function saveUser($params)
 {
     $userData = [
@@ -69,13 +137,50 @@ function saveUser($params)
     return file_put_contents('storage.json', json_encode($data));
 }
 
-function saveImage()
-{
-    $fileName = APP_PATH . '/images/' . $_FILES['image']['name'];
-    if (!move_uploaded_file($_FILES['image']['tmp_name'], $fileName)) {
-        throw new \Exception("Nismo snimili sliku");
-    }
-    return 'images/' . $_FILES['image']['name'];
+function deleteUser($email){
+	
+	$data = file_get_contents('storage.json');
+	$userData = json_decode($data, true);
+	$indices = [];
+	
+	foreach ($userData as $key => $value)
+	{
+		if ($value['email'] == $email)
+		{
+			$indices[] = $key;
+		}
+	}
+
+	foreach ($indices as $i)
+	{
+		unset($userData[$i]);
+	}
+
+	$userData = array_values($userData);
+	file_put_contents('storage.json', json_encode($userData));
+}
+
+function updateUser($params)
+{	
+	$data = file_get_contents('storage.json');
+	$userData = json_decode($data, true);
+
+	foreach ($userData as $key => $value) {
+		if ($value['email'] == $params['email']) {
+			$userData[$key]=[
+				'email' => $params['email'],
+				'password' => createPasswordHash($params['password']),
+				'firstName' => $params['firstName'],
+				'lastName' => $params['lastName'],
+				'username' => $params['username'],
+				'image' => saveImage(),
+				'status' => $params['status']
+			];
+		}
+	}
+	
+	file_put_contents('storage.json', json_encode($userData));
+	
 }
 
 function registerUser($params)
@@ -96,32 +201,22 @@ function getUserByEmail($email)
     return false;
 }
 
-function login($email, $password)
+function getUsers()
 {
-    $user = getUserByEmail($email);
-    if (!$user) {
-        return false;
-    }
-    if ($user->password === createPasswordHash($password)) {
-        $_SESSION['isLoggedIn'] = true;
-        return true;
-    }
-    return false;
+    $users = file_get_contents('storage.json');
+    return json_decode($users);
 }
 
-function validateLoginForm(array $params)
+#endregion
+
+#region Other Func
+function saveImage()
 {
-    if (isset($params['email']) and isset($params['password'])) {
-        if ((strlen($params['email']) > 6 and strlen($params['email'] <= 20) and strstr($params['email'], '@', true)) and
-            (strlen($params['password']) > 6 and strlen($params['password']) <= 14)
-        ) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
+    $fileName = APP_PATH . '/images/' . $_FILES['image']['name'];
+    if (!move_uploaded_file($_FILES['image']['tmp_name'], $fileName)) {
+        throw new \Exception("Nismo snimili sliku");
     }
+    return 'images/' . $_FILES['image']['name'];
 }
 
 function bootstrap()
@@ -132,62 +227,41 @@ function bootstrap()
     ini_set('display_errors', '1');
 }
 
-/*
- * Get users from file storage
- * Return array
- */
-function getUsers()
-{
-    $users = file_get_contents('storage.json');
-    return json_decode($users);
-}
-
-function isLoggedIn()
-{
-    if (isset($_SESSION['isLoggedIn']) && $_SESSION['isLoggedIn'] === true) {
-        return true;
-    }
-
-    return false;
-}
-
 function redirect($baseUrl, $route = '', $statusCode = 302)
 {
     header('Location: ' . $baseUrl . $route, $statusCode);
 }
+#endregion
 
-function logOut()
-{
-    unset($_SESSION);
-    session_destroy();
-}
+#region Article Functions
 
-function createPasswordHash($password)
-{
-    return md5($password);
-}
-
-function validateArticleForm()
-{
-    if (isset($_POST['body']) && strlen($_POST['body']) < 1 || isset($_POST['category']) && strlen($_POST['category']) < 1 || isset($_POST['user']) && strlen($_POST['user']) < 1) {
-        return false;
+function getLastArticleId(){
+    $tmp= file_get_contents('article.json');
+    $id=0;
+    if(strlen($tmp)!==0){
+        $data = json_decode($tmp);
+        foreach($data as $ret){
+            $id = $ret->articleId;
+        }
     }
-    return true;
-
+    return $id;
 }
 
 function saveArticleForm($params)
 {
+    $id = getLastArticleId();
+
     //$fileName = saveImage();
     $articleData = [
+        'articleId' => ++$id,
         'title' => $params['title'],
         'description' => $params['description'],
         'body' => $params['body'],
         'category' => $params['category'],
         'user' => $params['user'],
-        //'image' => $fileName,
+        //'image' => saveImage()
     ];
-    $tmp = file_get_contents('article.json');
+    $tmp= file_get_contents('article.json');
     if (strlen($tmp) === 0) {
         $data = [$articleData];
     } else {
@@ -195,6 +269,35 @@ function saveArticleForm($params)
         $data[] = $articleData;
     }
     return file_put_contents('article.json', json_encode($data));
+}
+
+function prepareArticleData($articleData, $articleId){
+    foreach ($articleData as $key => $value) {
+
+        if ($value->articleId == $articleId) {
+
+                $articleData[$key]=[
+                'articleId' => intval($articleId),
+                'title' => $_POST['title'],
+                'description' =>$_POST['description'],
+                'body' => $_POST['body'],
+                'category' => $_POST['category'],
+                'user' => $_POST['user']
+            ];
+        }
+
+    }
+    return $articleData;
+}
+
+function updateArticle($params)
+{
+    $data = getArticles();
+
+    $articleData = prepareArticleData($data, $params);
+
+    file_put_contents('article.json', json_encode($articleData));
+
 }
 
 function getArticleByTitle($title)
@@ -214,28 +317,38 @@ function getArticles()
     return json_decode($articles);
 }
 
-function saveArticle($params)
-{
-//    $articleData = [
-//        'title' => $params['title']
-//    ];
+function deleteArticle($articleId){
 
-    $articles = [];
-    foreach (getArticles() as $article) {
-        if ($article->title === trim($params['title'])) {
-            $articles[] = $params;
-        } else {
-            $articles[] = $params;
-        }
+	$data = file_get_contents('article.json');
+	$articleData = json_decode($data, true);
+	$indices = [];
+	
+	foreach ($articleData as $key => $value)
+	{
+		if ($value['articleId'] == $articleId)
+		{
+			$indices[] = $key;
+		}
+	}
 
-    }
-    return file_put_contents('article.json', json_encode($articles));
+	foreach ($indices as $i)
+	{
+		unset($articleData[$i]);
+	}
+
+	$articleData = array_values($articleData);
+	file_put_contents('article.json', json_encode($articleData));
 }
+#endregion
 
+#region Category Functions
 function saveCategoryForm($params)
 {
+    $id = getLastCategoryId($params);
+
     $userData = [
-        'category' => $params['category'],
+        'categoryId' => ++$id,
+        'category' => $params['category']
     ];
     $tmp = file_get_contents('category.json');
     if (strlen($tmp) === 0) {
@@ -252,5 +365,68 @@ function getCategory()
     $categories = file_get_contents('category.json');
     return json_decode($categories);
 }
+
+function getCategoryByCat($cat){
+    foreach(getCategory() as $category){
+        if($category->category === $cat){
+            return $category;
+        }
+    }
+    return false;
+}
+
+function getLastCategoryId(){
+    $tmp= file_get_contents('category.json');
+    $id=0;
+    if(strlen($tmp)!==0){
+        $data = json_decode($tmp);
+        foreach($data as $ret){
+            $id = $ret->categoryId;
+        }
+    }
+    return $id;
+
+}
+
+function deleteCategory($param){
+	
+	
+	$categoryData = getCategory();
+	$indices = [];
+	
+	foreach ($categoryData as $key=>$value)
+	{
+
+		if ($value->categoryId == $param['categoryId'])
+		{
+			$indices[] = $key;
+		}
+	}
+
+	foreach ($indices as $i)
+	{
+		unset($categoryData[$i]);
+	}
+
+	$categoryData = array_values($categoryData);
+	file_put_contents('category.json', json_encode($categoryData));
+}
+
+function updateCategory($param1, $param2){
+    $categoryData = getCategory();
+
+    foreach ($categoryData as $key => $value) {
+
+        if ($value->categoryId == $param1) {
+
+            $categoryData[$key]=[
+                'categoryId' => intval($param1),
+                'category' => $param2];
+        }
+    }
+
+    file_put_contents('category.json', json_encode($categoryData));
+}
+#endregion
 
 ?>

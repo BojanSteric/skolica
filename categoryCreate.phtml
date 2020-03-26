@@ -21,13 +21,16 @@
             </div>
         </form>
         <div class="container">
+
             <table class="table">
                 <tr>
                     <th>Category name</th>
+                    <th>Delete</th>
                 </tr>
                 <?php foreach($categories as $category): ?>
                     <tr>
-                        <td><?=$category -> category ?></td>
+                        <td><a href="index.php?route=categoryUpdateForm&category=<?=$category->category?>&categoryId=<?=$category->categoryId?>"><?=$category -> category ?></a></td>
+                        <td><a href="index.php?route=categoryDelete&categoryId=<?=$category->categoryId?>">DELETE</a></td>
                     </tr>
                 <?php endforeach; ?>
 
